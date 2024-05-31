@@ -16,11 +16,19 @@ class Window(QMainWindow):
 
     line_edit=""
 
+    def exitWithError(self, error):
+        logger.error(f"Application failed: {error}")
+        msgBox = QMessageBox();
+        msgBox.setText(f"Application failed: {error}");
+        msgBox.exec();
+        exit(1)
 
     def __init__(self):
         super().__init__()
 
-        logger.info('starting')
+        jhome = os.getenv("JAVA_HOME")
+
+        logger.info(f"Starting.  java: {jhome}; tablula {tabula.environment_info()}")
         self.setMinimumSize(100,100)
 
         logger.info(f"tabula java connection {tabula.environment_info()}")
@@ -68,18 +76,14 @@ class Window(QMainWindow):
 
             selectedFiles = dialog.selectedFiles()
 
-            msgBox = QMessageBox();
-            msgBox.setText(f"filepath {selectedFiles[0]}");
-            msgBox.exec();
+
+            logger.info(f"selected: {selectedFiles[0]}")
 
             #bottom is ACTUALY 83.07
             try:
                 allTables=tabula.read_pdf(selectedFiles[0], pages="all", multiple_tables=True, relative_columns=True, relative_area=True, area=(29.41,2.66,87.07,97.59), columns=[2.66, 6.17, 20.79, 24.92, 30.58, 32.94, 34.80, 38.57, 42.60, 47.15, 51.10, 55.09, 59.64, 63.48, 67.48, 71.96, 76.45, 81.58, 86.29, 90.26, 97.59])
             except Exception as e:
-                error = e
-                msgBox = QMessageBox();
-                msgBox.setText(f"Failed Making All Tables! {e}");
-                msgBox.exec();
+                self.exitWithError(f"Failed Making All Tables! {e}")
 
             #recording set to waiting as we iterate down the sheet, primed once we hit the first monitering period, recording once we hit the second, and stopped once we hit the third.
             # 0 -- waiting
@@ -94,34 +98,21 @@ class Window(QMainWindow):
                 sheetNumber=1
                 allPersonel = []
             except Exception as e:
-                error = e
-                msgBox = QMessageBox();
-                msgBox.setText(f"Failed Making All Tables! {e}");
-                msgBox.exec();
+                self.exitWithError(f"Failed read pdf {e}")
 
-            msgBox = QMessageBox();
-            msgBox.setText("Sorting File...");
-            msgBox.exec();
+            logger.info("Sorting file...")
 
             for iterator in range(0,len(allTables)):
-                
-                msgBox = QMessageBox();
-                msgBox.setText(f"In Loop... {iterator+1}/13");
-                msgBox.exec();
+                logger.info(f"In Loop... {iterator+1}/13")
 
                 p = allTables[iterator]
 
-                msgBox = QMessageBox();
-                msgBox.setText("Set iterator...");
-                msgBox.exec();
+                logger.info("set iterator")
 
                 try:
                     checkPeriod=tabula.read_pdf(selectedFiles[0], pages=sheetNumber, relative_area=True, area=[29.35, 34.72, 78.00, 47.11])
-                except FileNotFoundError as fE:
-                    oops = "oops"
-                    msgBox = QMessageBox();
-                    msgBox.setText("Error: sheetNumber overflow on line 110.");
-                    msgBox.exec();
+                except Exception as fE:
+                    self.exitWithError(f"Tabula read exception {fE}")
 
                 mDLP = 0;
                 monitoringDateList=[]
@@ -228,9 +219,7 @@ class Window(QMainWindow):
                             recording=1000
             #print(allPersonel)
 
-            msgBox = QMessageBox();
-            msgBox.setText("Writing File...");
-            msgBox.exec();
+            logger.info(f"Writing file")
 
             jsonOutDict = {"personel": allPersonel}
             jsonOutCorrectedDict = ""

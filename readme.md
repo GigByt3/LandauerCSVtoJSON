@@ -35,3 +35,11 @@ sudo apt-get install libgssapi-krb5-2
 In dialog
 * No JVM shared library file (libjvm.so) found. Try setting up the JAVA_HOME environment variable properly
   https://www.baeldung.com/find-java-home
+
+Maybe try [camalot](https://github.com/camelot-dev/camelot/blob/master/README.md)
+
+Other reading
+* https://github.com/actions/setup-python
+* https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+* https://www.pythonguis.com/tutorials/packaging-pyqt5-applications-pyinstaller-macos-dmg/
+* https://packaging.python.org/en/latest/tutorials/packaging-projects/
