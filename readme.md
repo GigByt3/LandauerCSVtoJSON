@@ -1,5 +1,3 @@
-
-
 Build As .app
 ```shell
 pyinstaller --name 'Landauer Report Processor' \
@@ -10,9 +8,5 @@ pyinstaller --name 'Landauer Report Processor' \
     --add-data='GUI/icons/48x48.png:.' \
     --add-data='GUI/icons/256x256.png:.' \
     --add-data='requirements.txt:.' \
-    --onefile \
     main.py
-```
-Build As .dmg
-```
 ```
