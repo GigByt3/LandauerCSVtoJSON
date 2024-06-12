@@ -7,6 +7,10 @@ Release Patch: 12/4/23
 Release Patch: 6/11/24
 Reed Research Reactor
 =======================================
+SHEET ACCESS
+https://docs.google.com/spreadsheets/d/1AtNteHFdEljCdlSPQxusrLrX2YR2lVZ35ZBJV7hE_js/edit?usp=sharing
+Copy the spreadsheet above, should have all functionalities automatically built in. To set up, go into Extensions/Appscript, once in the Appscript project go to Triggers, create a new Trigger, calling "SheetPickUp" every minuite. With that done the sheet should be set up. Running port data or Make Spreadsheet for the first time should ask for permissions to edit the spreadsheet and send email, with that confirmed the sheet will be good to go!
+=======================================
 WHY TO USE THIS SHEET
 This spreadsheet was designed to provide a lightweight, easily integrated data analytics tool for RSO's of small radiation faccilities with limited funding and staff hours, and, for larger facilities looking to integrate another dose-analytics tool, or contribute to an open source tool to save everyone a lot of in house tooling. Our slogan is- "When it comes to not accidentally getting cancer- we're all in this together."
 
