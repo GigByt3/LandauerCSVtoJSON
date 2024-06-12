@@ -1,13 +1,11 @@
 import json
 import sys
 import os
-import logging  
-logging.basicConfig(filename='myapp.log', level=logging.INFO)
+from pathlib import Path
 
 import pandas as pd
 import camelot
 import cv2
-import jpype
 from tabulate import tabulate
 
 from PyQt6 import QtGui, QtCore
@@ -64,14 +62,6 @@ class Window(QMainWindow):
         app.setWindowIcon(app_icon)
 
     def clickHandler(self):
-        try:
-            logger = logging.getLogger("report processor")
-        except:
-            msgBox = QMessageBox()
-            msgBox.setText("Ruh Roh.")
-            msgBox.exec()
-    
-        logger.info('Initialized -------------------------------------------- #')
 
         dialog = QFileDialog(self)
         dialog.setNameFilter("PDF Files (*.pdf)")
@@ -80,12 +70,9 @@ class Window(QMainWindow):
 
         if dialogSucessful == 1:
 
-            logger.info('Dialog Sucessful')
-
             if Window.line_edit2.text() != "1" and Window.line_edit2.text() != "2" and Window.line_edit2.text() != "3" and Window.line_edit2.text() != "4":
                 msgBox = QMessageBox()
                 msgBox.setText("Please enter only the quarter number for the monitering period! No spaces or other charecters.")
-                #print(Window.line_edit2.text())
                 msgBox.exec()
                 print(str(1/0))
             
@@ -93,97 +80,85 @@ class Window(QMainWindow):
 
             allTables=camelot.read_pdf(selectedFiles[0], flavor="stream", pages="all")
             
-            logger.info('Camelot Parse Sucessful')
-            logger.info('Pages Parsed: ' + str(len(allTables)))
-
             filecollect = []
             for file in allTables:
                 if "Annual Radiation Exposure" in file.df.iat[0, 0]:
-                    logger.info('Last Page')
                     continue
                 elif "LANDAUER" in file.df.iat[4, 7]:
-                    logger.info('Top Matter')
-                    #print(file.df)
                     continue
                 else:
-                    #print(file.df)
+                    print(file.df)
                     newtab = []
-                    for y in range(0, file.df.shape[0]-1):
+                    for y in range(0, file.df.shape[0]):
                         row = []
-                        for x in range(0, file.df.shape[1]-1):
-                            #print("Checking y: " + str(y) + "/" + str(file.df.shape[1]-1) + " and x: " + str(x) + "/" + str(file.df.shape[0]-1))
+                        for x in range(0, file.df.shape[1]):
                             lineBreak = file.df.iat[y, x].split('\n')
                             for i in range(0, len(lineBreak)):
                                 row.append(lineBreak[i])
                         newtab.append(row)
-                    logger.info('Collected a File')
                     filecollect.append(newtab)
-
-            logger.info('Table Collection Sucessful')
 
             Period = "QUARTER " + Window.line_edit2.text()
             
-            Mode = 0
             currentID = 0
-            personelDict = []
-            personel = {"number": 0}
+            personel = {}
             useName = ""
             use = {"Type": "", "DDE": "", "LDE": "", "SDE": ""}
-            # 0: Looking for Monitoring Period
-            # 1: Looking for ID
-            # 2: Looking for Dosimeter
-            # 3: Looking for Use
-            # 4, 5, 6: Looking for DDE, LDE, and SDE
-            # -1: Outside of Monitoring Period
+            collect = False
 
-            logger.info('Searching for Personel Info')
+            readNote = False
+            lastEntry = ["",""]
 
             for f in range(0, len(filecollect)):
                 for r in range(0, len(filecollect[f])):
                     for c in range(0, len(filecollect[f][r])):
-                        if Mode != -1 and Mode != 0 and filecollect[f][r][c] != Period and "QUARTER" in filecollect[f][r][c]:
-                            personelDict.append(personel)
-                            Mode = -1
-                        if Mode == 0:
-                            if filecollect[f][r][c] == Period:
-                                Mode = 1
-                        elif Mode == 1:
-                            if c == 0 and "0" in filecollect[f][r][c]:
-                                Mode = 2
-                                currentID = filecollect[f][r][c]
-                                personel["number"] = currentID
-                        elif Mode == 2:
-                            if "Pa" in filecollect[f][r][c] or "Ja" in filecollect[f][r][c] or "S" in filecollect[f][r][c]:
-                                Mode = 3
-                                use["Type"] = filecollect[f][r][c]
-                            elif c == 0 and "0" in filecollect[f][r][c]:
-                                personelDict.append(personel)
-                                personel = {"number": 0}
-                                useName = ""
-                                use = {"Type": "", "DDE": "", "LDE": "", "SDE": ""}
-                                Mode = 2
-                                currentID = filecollect[f][r][c]
-                                personel["number"] = currentID
-                        elif Mode == 3:
-                            if "CHEST" in filecollect[f][r][c] or "AREA" in filecollect[f][r][c] or "LFINGR" in filecollect[f][r][c] or "RFINGR" in filecollect[f][r][c]:
-                                Mode = 4
-                                useName = filecollect[f][r][c]
-                        elif Mode == 4:
-                            if filecollect[f][r][c] != "":
-                                Mode = 5
-                                use["DDE"] = filecollect[f][r][c]
-                        elif Mode == 5:
-                            if filecollect[f][r][c] != "":
-                                Mode = 6
-                                use["LDE"] = filecollect[f][r][c]
-                        elif Mode == 6:
-                            if filecollect[f][r][c] != "":
-                                Mode = 2
-                                use["SDE"] = filecollect[f][r][c]
-                                personel[useName] = use
-                        
 
-            logger.info('Personel Info Collected.')
+                        if filecollect[f][r][c] == Period:
+                            collect = True
+                        if "QUARTER" in filecollect[f][r][c] and filecollect[f][r][c] != Period:
+                            collect = False
+                        
+                        if not collect:
+                            continue
+
+                        if c==0 and filecollect[f][r][c].isnumeric() and len(filecollect[f][r][c]) == 5:
+                            currentID = filecollect[f][r][c]
+                        elif "Pa" in filecollect[f][r][c] or "Ja" in filecollect[f][r][c] or "S" == filecollect[f][r][c]:
+                            use["Type"] = filecollect[f][r][c]
+                        elif "CHEST" in filecollect[f][r][c] or "AREA" in filecollect[f][r][c] or "LFINGR" in filecollect[f][r][c] or "RFINGR" in filecollect[f][r][c]:
+                            useName = filecollect[f][r][c]
+                        elif "NOTE" in filecollect[f][r][c]:
+                            readNote = True
+                        elif readNote and "ABSENT" in filecollect[f][r][c]:
+                            personel[lastEntry[0]][lastEntry[1]]["DDE"] = "A"
+                            personel[lastEntry[0]][lastEntry[1]]["LDE"] = "A"
+                            personel[lastEntry[0]][lastEntry[1]]["SDE"] = "A"
+                        elif readNote and "Unused" in filecollect[f][r][c]:
+                            personel[lastEntry[0]][lastEntry[1]]["DDE"] = "M"
+                            personel[lastEntry[0]][lastEntry[1]]["LDE"] = "M"
+                            personel[lastEntry[0]][lastEntry[1]]["SDE"] = "M"
+                        elif use["Type"] != "" and useName != "" and (filecollect[f][r][c] == "M" or filecollect[f][r][c].isnumeric()):
+                            if use["DDE"] == "" and not "FINGR" in useName:
+                                use["DDE"] = filecollect[f][r][c]
+                            elif use["LDE"] == "" and not "FINGR" in useName:
+                                use["LDE"] = filecollect[f][r][c]
+                            elif use["SDE"] == "":
+                                use["SDE"] = filecollect[f][r][c]
+                    if int(currentID) != 0 and useName != "" and use["Type"] != "":
+                        if not str(currentID).lstrip("0") in personel:
+                            personel[str(currentID).lstrip("0")] = {}
+                        personel[str(currentID).lstrip("0")][str(useName)] = use
+                        lastEntry = [str(currentID).lstrip("0"),str(useName)]
+                    #reset
+                    useName = ""
+                    use = {"Type": "", "DDE": "", "LDE": "", "SDE": ""}
+
+            personelDict = []
+
+            for id in personel.keys():
+                appendEntry = personel[id]
+                appendEntry["number"] = id
+                personelDict.append(appendEntry)
 
             jsonOutDict = {"personel": personelDict}
             jsonOutCorrectedDict = ""
@@ -191,21 +166,13 @@ class Window(QMainWindow):
                 jsonOutName = Window.line_edit.text() + ".json"
             else:
                 jsonOutName = "sampleLandauer.json"
-            
 
-            logger.info('Writing File ' + str(jsonOutName))
+            WriteLocation = Path.home() / 'Downloads' / str(jsonOutName)
 
-            with open(jsonOutName, "w") as outfile: 
+            with open(WriteLocation, "a") as outfile: 
                 json.dump(jsonOutDict, outfile)
-            with open(jsonOutName, "r") as checkfile:
-                jsonOutCorrectedString = checkfile.read().replace(": NaN", ": '??'")
-                jsonOutCorrectedDict = eval(jsonOutCorrectedString)
-            with open(jsonOutName, "w") as outfile: 
-                json.dump(jsonOutCorrectedDict, outfile)
         else:
             doNothing = True
-
-        logger.info('File Writen.')
 
 app = QApplication([])
 app.setApplicationName("Landauer Report processor")
