@@ -1,0 +1,12 @@
+>>> .App and Spreadsheet external files! <<<
+
+Landauer PDF to CSV Archive File: https://drive.google.com/file/d/1EOgNAsw-90AuXHBuHVzVVij7xUdzYShV/view?usp=sharing
+
+You can use this if you don't want to make the file yourself using the scripts and commands in this repository.
+
+Google Sheet Template: https://docs.google.com/spreadsheets/d/1Y8c4N3E-c8LNzAzHn9SxHvdKx-qaPFy33B4rCQPmTDk/edit?usp=sharing
+
+When you copy this document, 
+1. Add personel and facility numbers to the Facility and Environmental sheet.
+2. Add employees and their employment status to the Staff sheet.
+3. Use "Analysis > Port Data" to add .json files from the python program that you've uploaded to google drive into the spreadsheet.
